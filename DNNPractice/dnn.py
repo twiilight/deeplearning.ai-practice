@@ -10,11 +10,15 @@ class DNNModel:
 
         self._layer_dims = layer_dims
         self.weight, self.bias = {}, {}
-        self.initialize_params(layer_dims)
+        self.initialize_params()
 
     @property
     def layer_dims(self):
         return self._layer_dims
+
+    @property
+    def layers(self):
+        return len(self.layer_dims)
 
     def initialize_params(self):
         """
@@ -25,47 +29,28 @@ class DNNModel:
                  W_i dimension: (n^[i], n^[i-1])),
                  b_i dimension: (n^[i], 1)
         """
-        for i in range(1, len(self.layer_dims)):
+        for i in range(1, self.layers):
             self.weight.setdefault("W" + str(i), np.random.randn(self.layer_dims[i], self.layer_dims[i-1]))
             self.bias.setdefault("b" + str(i), np.zeros(self.layer_dims[i], 1))
-        # if isinstance(self.nh, int):
-        #     self.weight = {
-        #         # TODO: add the coefficient of weight matrix W to hyper parameters
-        #         "W_1": np.random.randn(self.nh, self.nx) * 0.01,
-        #         "W_2": np.random.randn(self.ny, self.nh) * 0.01,
-        #     }
-        #     self.bias = {
-        #         "b_1": np.zeros(self.nh, 1),
-        #         "b_2": np.zeros(self.ny, 1)
-        #     }
-        # else:
-        #     hidden_layers = len(self.nh)
-        #     # TODO: too complex dictionary comprehension
-        #     self.parameters = dict(
-        #         [("W_{}".format(i+1), np.random.randn(n_h[i], n_h[i-1] if i else n_x) * 0.01)
-        #          for i in range(hidden_layers)] +
-        #         [("b_{}".format(i+1), np.random.randn(n_h[i], 1)) for i in range(hidden_layers)] +
-        #         [("W_{}".format(hidden_layers+1), np.random.randn(n_y, n_h[hidden_layers-1]) * 0.01),
-        #          ("b_{}".format(hidden_layers+1), np.random.randn(n_y, 1))]
-        #     )
 
-    def dnn_forward_model(self, X: np.ndarray, parameters: Dict, forward_activation):
+        assert len(self.weight) % 2 and len(self.bias) % 2, "the number of parameters error."
+
+    def dnn_forward_model(self, X: np.ndarray, forward_activation=None):
         """
         Implement the forward propagation model.
         :param forward_activation: a list of activation functions used in dnn forward model.
         :param X: the input of whole neural network.
-        :param parameters: weight matrix and bias matrix of layers.
         :return:
         """
-        _ = len(parameters)
-        assert _ == 0, "the number of parameters error."
+        if not forward_activation:
+            forward_activation = ["relu" for i in range(self.layers - 1)]
 
-        L = _ // 2
-        assert len(forward_activation) == L, "the number of activation functions is not eq to the number of layers."
+        assert len(forward_activation) == self.layers - 1, \
+            "the number of activation functions is not eq to the number of layers."
 
         A = X
-        for i in range(1, L+1):
-            Z = linear_forward(A, parameters["W_{}".format(i)], parameters["b_{}".format(i)])
+        for i in range(1, self.layers):
+            Z = linear_forward(A, self.weight["W{}".format(i)], self.bias["b{}".format(i)])
             A = linear_activation_forward(Z, activation=forward_activation[i-1])
 
 
